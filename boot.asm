@@ -1,29 +1,46 @@
 [BITS 16]  ;Tells the assembler that its a 16 bit code
-[ORG 0x7C00]  ;Origin, tell the assembler that where the code will
-  ;be in memory after it is been loaded
+[ORG 0x7C00]  ;Origin
 
 MOV AL, 65
 CALL PrintCharacter
 CALL ListenForInput
 
-
 PrintCharacter:  ;Procedure to print character on screen
-  ;Assume that ASCII value is in register AL
-  MOV AH, 0x0E  ;Tell BIOS that we need to print one charater on screen.
-  MOV BH, 0x00  ;Page no.
-  MOV BL, 0x0D  ;Text attribute 0x07 is lightgrey font on black background
+  CMP  AL, 8    ; Check if char is backspace
+  MOV AH, 0x0E  ; Tell BIOS that we need to print one charater on screen.
+  JNE .skip_handle_backspace
+
+  MOV AL, 0x20  ; If AL was backspace, change to space
+
+  CALL MoveCursorBackOne
+  MOV AH, 0x0A
+
+  .skip_handle_backspace
+  MOV BH, 0x00  ; Page no.
+  MOV BL, 0x0D  ; Text attribute 0x07 is lightgrey font on black background
 
   INT 0x10  ;Call video interrupt
-  RET    ;Return to calling procedure
+
+  RET
 
 ListenForInput:  ;Repeatedly check for keyboard input, print if available
-  MOV AH, 0
-  MOV AL, 0
-  INT 16h
+  MOV AH, 0 ; Set AH to 0 to lock when listening for key
+  MOV AL, 0 ; Set last key to 0
+  INT 16H   ; Listen for a keypress, save to register AL
  
   CALL PrintCharacter
 
   CALL ListenForInput
+  RET
+
+MoveCursorBackOne: 
+  MOV AH, 3
+  INT 10H       ; Grab current cursor coords
+
+  ADD DL, -1    ; Move cursor back one place
+
+  MOV AH, 2
+  INT 10H       ; Set new cursor position
   RET
 
 TIMES 510 - ($ - $$) db 0  ;Fill the rest of sector with 0
