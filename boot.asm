@@ -1,4 +1,4 @@
-[BITS 16]  ;Tells the assembler that its a 16 bit code
+[BITS 16]
 [ORG 0x7C00]  ;Origin
 
 MOV AL, 65
@@ -9,6 +9,18 @@ PrintCharacter:  ;Procedure to print character on screen
   CMP  AL, 8    ; Check if char is backspace
   MOV AH, 0x0E  ; Tell BIOS that we need to print one charater on screen.
   JNE .skip_handle_backspace
+
+  MOV AH, 3
+  INT 10H       ; Grab current cursor coords
+  CMP DL, 0     ; Are we at col 0? jump to handle if not
+  JNE .handle_backspace
+  CMP DH, 0     ; Are we at row 0? jump to handle if not
+  JNE .handle_backspace
+
+  RET           ; We're at 0,0, can't do a backspace
+
+
+  .handle_backspace
 
   MOV AL, 0x20  ; If AL was backspace, change to space
 
@@ -38,7 +50,7 @@ MoveCursorBackOne:
   INT 10H       ; Grab current cursor coords
 
   ADD DL, -1    ; Move cursor back one place
-
+  
   MOV AH, 2
   INT 10H       ; Set new cursor position
   RET
