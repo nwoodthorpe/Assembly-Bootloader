@@ -5,11 +5,7 @@ MOV AL, 65
 CALL PrintCharacter
 CALL ListenForInput
 
-PrintCharacter:  ;Procedure to print character on screen
-  CMP  AL, 8    ; Check if char is backspace
-  MOV AH, 0x0E  ; Tell BIOS that we need to print one charater on screen.
-  JNE .skip_handle_backspace
-
+Backspace:      ; Logic for doing a backspace
   MOV AH, 3
   INT 10H       ; Grab current cursor coords
   CMP DL, 0     ; Are we at col 0? jump to handle if not
@@ -19,17 +15,25 @@ PrintCharacter:  ;Procedure to print character on screen
 
   RET           ; We're at 0,0, can't do a backspace
 
-
   .handle_backspace
 
   MOV AL, 0x20  ; If AL was backspace, change to space
 
   CALL MoveCursorBackOne
   MOV AH, 0x0A
+  INT 0x10
+  RET
 
+PrintCharacter: ; Procedure to print character on screen
+  CMP  AL, 8    ; Check if char is backspace
+  JNE .skip_handle_backspace
+  CALL Backspace
+  RET
+  
   .skip_handle_backspace
   MOV BH, 0x00  ; Page no.
-  MOV BL, 0x0D  ; Text attribute 0x07 is lightgrey font on black background
+  MOV BL, 0x07  ; Text attribute 0x07 is lightgrey font on black background
+  MOV AH, 0x0E  ; Tell BIOS that we need to print one charater on screen.
 
   INT 0x10  ;Call video interrupt
 
