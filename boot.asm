@@ -11,17 +11,26 @@ Backspace:      ; Logic for doing a backspace
   CMP DL, 0     ; Are we at col 0? jump to handle if not
   JNE .handle_backspace
   CMP DH, 0     ; Are we at row 0? jump to handle if not
-  JNE .handle_backspace
+  JNE .handle_newline
 
   RET           ; We're at 0,0, can't do a backspace
 
+  .handle_newline ; Col 0 but not row 0. We need to skip to the last col of the previous row
+  
+  MOV AH, 0x0F    ; Get video mode and info
+  INT 10H 
+  ADD DH, -1
+  MOV DL, AH
+  MOV AH, 2
+  INT 10H       ; Set new cursor position
+
   .handle_backspace
 
-  MOV AL, 0x20  ; If AL was backspace, change to space
-
   CALL MoveCursorBackOne
+
+  MOV AL, 0x20  ; If AL was backspace, change to space
   MOV AH, 0x0A
-  INT 0x10
+  INT 10H
   RET
 
 PrintCharacter: ; Procedure to print character on screen
