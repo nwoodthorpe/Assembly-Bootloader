@@ -1,16 +1,14 @@
 [BITS 16]
 [ORG 0x7C00]  ;Origin
 
-MOV AL, 65
-CALL PrintCharacter
 CALL ListenForInput
 
 Backspace:      ; Logic for doing a backspace
-  MOV AH, 3
-  INT 10H       ; Grab current cursor coords
-  CMP DL, 0     ; Are we at col 0? jump to handle if not
+  MOV AH, 0x03
+  INT 0x10      ; Grab current cursor coords
+  CMP DL, 0x00     ; Are we at col 0? jump to handle if not
   JNE .handle_backspace
-  CMP DH, 0     ; Are we at row 0? jump to handle if not
+  CMP DH, 0x00     ; Are we at row 0? jump to handle if not
   JNE .handle_newline
 
   RET           ; We're at 0,0, can't do a backspace
@@ -18,11 +16,11 @@ Backspace:      ; Logic for doing a backspace
   .handle_newline ; Col 0 but not row 0. We need to skip to the last col of the previous row
   
   MOV AH, 0x0F    ; Get video mode and info
-  INT 10H 
+  INT 0x10 
   ADD DH, -1
   MOV DL, AH
-  MOV AH, 2
-  INT 10H       ; Set new cursor position
+  MOV AH, 0x02
+  INT 0x10       ; Set new cursor position
 
   .handle_backspace
 
@@ -30,11 +28,11 @@ Backspace:      ; Logic for doing a backspace
 
   MOV AL, 0x20  ; If AL was backspace, change to space
   MOV AH, 0x0A
-  INT 10H
+  INT 0x10
   RET
 
 PrintCharacter: ; Procedure to print character on screen
-  CMP  AL, 8    ; Check if char is backspace
+  CMP  AL, 0x08    ; Check if char is backspace
   JNE .skip_handle_backspace
   CALL Backspace
   RET
@@ -49,9 +47,9 @@ PrintCharacter: ; Procedure to print character on screen
   RET
 
 ListenForInput:  ;Repeatedly check for keyboard input, print if available
-  MOV AH, 0 ; Set AH to 0 to lock when listening for key
-  MOV AL, 0 ; Set last key to 0
-  INT 16H   ; Listen for a keypress, save to register AL
+  MOV AH, 0x00 ; Set AH to 0 to lock when listening for key
+  MOV AL, 0x00 ; Set last key to 0
+  INT 0x16   ; Listen for a keypress, save to register AL
  
   CALL PrintCharacter
 
@@ -59,13 +57,13 @@ ListenForInput:  ;Repeatedly check for keyboard input, print if available
   RET
 
 MoveCursorBackOne: 
-  MOV AH, 3
-  INT 10H       ; Grab current cursor coords
+  MOV AH, 0x03
+  INT 0x10      ; Grab current cursor coords
 
   ADD DL, -1    ; Move cursor back one place
   
-  MOV AH, 2
-  INT 10H       ; Set new cursor position
+  MOV AH, 0x02
+  INT 0x10       ; Set new cursor position
   RET
 
 TIMES 510 - ($ - $$) db 0  ;Fill the rest of sector with 0
